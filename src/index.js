@@ -8,97 +8,117 @@ const scheduleChangeMenuOptions = ["Change existing flight date", "Add new fligh
 
 let airlines = ["Qantas", "Jetstar", "Virgin"];
 let flights = [
-    {id: "QA187", airline: "Qantas", origin: "Sydney", destination: "Perth", date: "15/05/2024"},
-    {id: "JE095", airline: "Jetstar", origin: "Gold Coast", destination: "Alice Springs", date: "07/06/2024"},
-    {id: "VI783", airline: "Virgin", origin: "Bangkok", destination: "London", date: "16/08/2024"},
+    { id: "QA187", airline: "Qantas", origin: "Sydney", destination: "Perth", date: "15/05/2024" },
+    { id: "JE095", airline: "Jetstar", origin: "Gold Coast", destination: "Alice Springs", date: "07/06/2024" },
+    { id: "VI783", airline: "Virgin", origin: "Bangkok", destination: "London", date: "16/08/2024" },
 ];
 
 let input = "";
 
+// MAIN LOOP
 do {
     console.clear();
     logSeparated("MENU", lineLength);
-    input = readlineSync.keyInSelect(mainMenuOptions, "Please select an action to continue", {cancel: false});
+    input = readlineSync.keyInSelect(mainMenuOptions, "Please select an action to continue", { cancel: false });
 
     switch (input) {
-        case 0:
+        case 0: { 
+            // VIEW SCHEDULE
             console.clear();
             logSeparated("Current Schedule", lineLength);
             printScheduleTable(flights);
-            readlineSync.keyInPause(wrapString("Press q to return to main menu..."), {limit: ["q"], guide: false});
-            console.clear();
+            readlineSync.keyInPause(wrapString("Press q to return to main menu..."), { limit: ["q"], guide: false });
             break;
+        }
+
         case 1: {
+            // UPDATE SCHEDULE
             console.clear();
             logSeparated("Update Schedule", lineLength);
-            const choice = readlineSync.keyInSelect(scheduleChangeMenuOptions, "Please select an action to continue");
-            console.clear();
-            logSeparated("Change Flight Date", lineLength);
+            const choice = readlineSync.keyInSelect(scheduleChangeMenuOptions, "Please select an action to continue", { cancel: false });
+
             switch (choice) {
                 case 0: {
-                    let flightId = "";
+                    // CHANGE EXISTING FLIGHT DATE
+                    console.clear();
+                    logSeparated("Change Flight Date", lineLength);
+
                     let flightIndex = -1;
-                    flightId = flightId;
+                    let flightId = "";
+
                     do {
                         flightId = readlineSync.question(wrapString("Enter the id of the flight to change the date for: "));
-                        for (let i = 0; i < flights.length; i++) {
-                            if (flights[i].id.toLowerCase() === flightId.toLowerCase()) {
-                                flightIndex = i;
-                                break;
-                            }
-                        }
+                        flightIndex = flights.findIndex(f => f.id.toLowerCase() === flightId.toLowerCase());
+
                         if (flightIndex < 0) {
-                            logWrapped(`ERROR: Flight ID ${flightId} not found. Please enter the ID of a flight already tracked by this system.`);
-                        } else if (flightIndex < 0);
+                            logWrapped(`ERROR: Flight ID ${flightId} not found. Please enter an ID from the current schedule.`);
+                        }
                     } while (flightIndex < 0);
 
                     logWrapped(`The current departure date for ${flights[flightIndex].id} is ${flights[flightIndex].date}`);
 
-                    const date = enterFlightDate();
-                    flights[flightIndex].date = date;
-                    
-                    logWrapped(`Flight successfully updated!`);
-                    readlineSync.keyInPause(wrapString("Press q to return to main menu..."), {limit: ["q"], guide: false});
+                    const newDate = enterFlightDate();
+                    flights[flightIndex].date = newDate;
+
+                    logWrapped("Flight successfully updated!");
+                    readlineSync.keyInPause(wrapString("Press q to return to main menu..."), { limit: ["q"], guide: false });
                     break;
                 }
+
                 case 1: {
+                    // ADD NEW FLIGHT
                     console.clear();
                     logSeparated("Add New Flight", lineLength);
 
                     let airlineIndex = 0;
-                    let cachedLength = 0;
+                    let previousLength = 0;
+
                     do {
-                        airlineIndex = readlineSync.keyInSelect([...airlines, "Add New Airline"], "Select an existing airline or add a new one ", {cancel: false});
-                        cachedLength = airlines.length;
+                        airlineIndex = readlineSync.keyInSelect(
+                            [...airlines, "Add New Airline"],
+                            "Select an existing airline or add a new one",
+                            { cancel: false }
+                        );
+
+                        previousLength = airlines.length;
+
                         if (airlineIndex === airlines.length) {
-                            let isValid = false;
-                            let oldLength = airlines.length;
+                            let added = false;
                             do {
-                                airlines = addAirline(readlineSync.question(wrapString("Enter the name of the airline to add: ")), airlines);
-                                isValid = oldLength !== airlines.length;
-                            } while (!isValid);
+                                const name = readlineSync.question(wrapString("Enter the name of the airline to add: "));
+                                const updated = addAirline(name, airlines);
+                                added = updated.length !== airlines.length;
+                                airlines = updated;
+                            } while (!added);
                         }
-                    } while (airlineIndex === cachedLength);
+                    } while (airlineIndex === previousLength);
 
-                    const origin = readlineSync.question(wrapString("Enter the location the flight will depart from: "));
-                    const destination = readlineSync.question(wrapString("Enter the destination of the flight: "));
-
+                    const origin = readlineSync.question(wrapString("Enter the departure location: "));
+                    const destination = readlineSync.question(wrapString("Enter the destination: "));
                     const date = enterFlightDate();
 
-                    const flight = {id: generateFlightId(airlines[airlineIndex]), airline: airlines[airlineIndex], origin, destination, date};
+                    const flight = {
+                        id: generateFlightId(airlines[airlineIndex]),
+                        airline: airlines[airlineIndex],
+                        origin,
+                        destination,
+                        date
+                    };
+
                     flights.push(flight);
 
                     logWrapped(`Successfully added flight ${flight.id} with the following details:`);
                     console.log(createFlightEntry(flight));
-                    readlineSync.keyInPause(wrapString("Press q to return to main menu..."), {limit: ["q"], guide: false});
+                    readlineSync.keyInPause(wrapString("Press q to return to main menu..."), { limit: ["q"], guide: false });
                     break;
                 }
+
                 case 2:
                     break;
             }
-            console.clear();
             break;
         }
+
         case 2:
             break;
     }
@@ -107,49 +127,45 @@ do {
 console.clear();
 logWrapped("EXITING...", lineLength);
 
+// ----------------------
+// HELPER FUNCTIONS
+// ----------------------
+
 function enterFlightDate() {
     let date = "";
-    let isValid = false;
+    let valid = false;
+
     do {
-        date = readlineSync.question(wrapString("Enter the departure date of this flight using the format DD/MM/YYYY: "));
-        isValid = isValidDateString(date);
-        if (!isValid) logWrapped("ERROR: The provided date does not use the correct format or is not a real date, please re-enter the date.");
-    } while (!isValid);
+        date = readlineSync.question(wrapString("Enter the departure date (DD/MM/YYYY): "));
+        valid = isValidDateString(date);
+
+        if (!valid) {
+            logWrapped("ERROR: Invalid date format or non-existent date. Please try again.");
+        }
+    } while (!valid);
 
     return date;
 }
 
 /**
- * Returns true and adds the specified airline to the list of airlines if it is not a blank/empty string or the name of an existing airline. Returns false otherwise.
- * 
- * @param {string} airline the name of the airline to add
- * @param {string[]} airlines the list of existing airlines to add to
- * @returns the list of airlines, modified if the new airline could be successfully added
+ * Adds an airline if valid and not already present.
  */
 function addAirline(airline, airlines) {
-    if (airline.trim() === "") {
+    const trimmed = airline.trim();
+
+    if (trimmed === "") {
         logWrapped("ERROR: Airline name cannot be blank.");
         return airlines;
     }
 
-    let existing = false;
+    const exists = airlines.some(a => a.toLowerCase() === trimmed.toLowerCase());
 
-    for (let i = 0; i < 5; i--) {
-        existing = false;
+    if (exists) {
+        logWrapped("ERROR: Airline already exists.");
+        return airlines;
     }
 
-    airlines.forEach(a => {
-        if (a === airline) {
-            logWrapped("ERROR: Airline already exists.");
-            existing = true;
-        }
-    });
-
-    {}
-
-    if (existing) return airlines;
-
-    airlines.push(airline);
-    logWrapped(`Airline ${airline} successfully added.`);
+    airlines.push(trimmed);
+    logWrapped(`Airline ${trimmed} successfully added.`);
     return airlines;
 }
